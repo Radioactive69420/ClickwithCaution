@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Added Google Fonts for Pixelify Sans and Red Hat Text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=Red+Hat+Text:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+    <!-- Removed emoji from title -->
+    <title>Malware Dodger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* Updated font family to use Red Hat Text for body text */
+            font-family: 'Red Hat Text', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            /* Updated font family to use Pixelify Sans for headers */
+            font-family: 'Pixelify Sans', monospace;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .mechanics-box {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .mechanics-title {
+            /* Updated font family to use Pixelify Sans for headers */
+            font-family: 'Pixelify Sans', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #ffd700;
+        }
+
+        .mechanics-list {
+            list-style: none;
+            line-height: 1.8;
+        }
+
+        .mechanics-list li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .mechanics-list li:before {
+            /* Removed emoji and replaced with bullet point */
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-width: 120px;
+            min-height: 44px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #00b894, #00a085);
+        }
+
+        .lives-gauge {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            z-index: 1000;
+        }
+
+        .score {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            z-index: 1000;
+        }
+
+        .scenario-box {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .scenario-title {
+            /* Updated font family to use Pixelify Sans for headers */
+            font-family: 'Pixelify Sans', monospace;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+
+        .scenario-text {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .choices {
+            display: grid;
+            gap: 15px;
+            margin-top: 2rem;
+        }
+
+        .choice-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 15px 20px;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 1rem;
+            min-height: 44px;
+        }
+
+        .choice-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateX(5px);
+        }
+
+        .choice-btn.correct {
+            background: rgba(0,184,148,0.3);
+            border-color: #00b894;
+        }
+
+        .choice-btn.incorrect {
+            background: rgba(255,107,107,0.3);
+            border-color: #ff6b6b;
+        }
+
+        .feedback {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .feedback.correct {
+            background: rgba(0,184,148,0.2);
+            border: 1px solid #00b894;
+        }
+
+        .feedback.incorrect {
+            background: rgba(255,107,107,0.2);
+            border: 1px solid #ff6b6b;
+        }
+
+        .progress {
+            margin: 2rem 0;
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .ranking {
+            /* Updated font family to use Pixelify Sans for headers */
+            font-family: 'Pixelify Sans', monospace;
+            font-size: 2rem;
+            margin: 1rem 0;
+        }
+
+        .ranking.defender { color: #00b894; }
+        .ranking.cautious { color: #fdcb6e; }
+        .ranking.magnet { color: #ff6b6b; }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .mechanics-box, .scenario-box {
+                padding: 1.5rem;
+                margin: 1rem 0;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                font-size: 1rem;
+                width: 100%;
+                margin: 8px 0;
+            }
+
+            .choices {
+                gap: 10px;
+            }
+
+            .choice-btn {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+
+            .lives-gauge, .score {
+                position: static;
+                display: inline-block;
+                margin: 10px 5px;
+            }
+
+            .scenario-title {
+                font-size: 1.5rem;
+            }
+
+            .scenario-text {
+                font-size: 1.1rem;
+            }
+
+            /* Fixed mute button position for mobile - moved above other elements */
+            .mute-btn {
+                position: static;
+                transform: none;
+                display: inline-block;
+                margin: 10px 5px 20px 5px;
+                order: -1;
+            }
+
+            .mobile-controls {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title {
+                font-size: 1.8rem;
+            }
+
+            .mechanics-box, .scenario-box {
+                padding: 1rem;
+            }
+
+            .choice-btn {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Mute Button Styles */
+        .mute-btn {
+            position: fixed;
+            top: 20px;
+            right: 50%;
+            transform: translateX(50%);
+            background: rgba(0,0,0,0.3);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1000;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .mute-btn:hover {
+            background: rgba(0,0,0,0.5);
+            transform: translateX(50%) scale(1.1);
+        }
+
+        /* Added styles for game title section with play button */
+        .game-title-section {
+            display: none;
+        }
+
+        /* Added styles for loading screen overlay */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            /* Updated font family to use Pixelify Sans for headers and removed emoji */
+            font-family: 'Pixelify Sans', monospace;
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+            background: linear-gradient(45deg, #667eea, #764ba2, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .loading-play-button {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(116, 185, 255, 0.3);
+            border: 3px solid rgba(116, 185, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-bottom: 1rem;
+        }
+
+        .loading-play-button:hover {
+            background: rgba(116, 185, 255, 0.5);
+            border-color: rgba(116, 185, 255, 0.8);
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(116, 185, 255, 0.4);
+        }
+
+        .loading-play-icon {
+            font-size: 2.5rem;
+            color: white;
+            margin-left: 6px;
+        }
+
+        .loading-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .loading-title {
+                font-size: 2.5rem;
+            }
+            
+            .loading-play-button {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .loading-play-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Added loading screen overlay -->
+    <div id="loadingScreen" class="loading-screen">
+        <!-- Removed emoji from loading title -->
+        <h1 class="loading-title">MALWARE DODGER</h1>
+        <div class="loading-play-button" onclick="startGameFromLoading()">
+            <span class="loading-play-icon">▶️</span>
+        </div>
+        <p class="loading-subtitle">Click to start the game</p>
+    </div>
+
+    <audio id="bgMusic" loop preload="auto">
+        <!-- Updated audio source to use x.mp3 -->
+        <source src="x.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Added mute/sound toggle button -->
+    <button id="muteBtn" class="mute-btn" onclick="toggleMute()">🔊</button>
+
+    <div class="game-container">
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen active">
+            <!-- Added mobile controls wrapper for better mobile layout -->
+            <div class="mobile-controls">
+                <!-- Mute button will be moved here on mobile via CSS -->
+            </div>
+            
+            <!-- Removed emoji from title -->
+            <h1 class="title">Malware Dodger</h1>
+            <p class="subtitle">Learn to identify and avoid digital threats!</p>
+            
+            <div class="mechanics-box">
+                <!-- Removed emoji from mechanics title -->
+                <h3 class="mechanics-title">Game Mechanics</h3>
+                <ul class="mechanics-list">
+                    <!-- Removed emojis from mechanics list items -->
+                    <li>You start with 3 lives</li>
+                    <li>Face 7 cybersecurity scenarios</li>
+                    <li>Choose the safest action (A, B, C, or D)</li>
+                    <li>Correct answers = +10 points</li>
+                    <li>Wrong answers = -1 life</li>
+                    <li>Answer a reflective question at the end</li>
+                    <li>Get ranked based on your performance!</li>
+                </ul>
+            </div>
+            
+            <!-- Removed emoji from button text -->
+            <button class="btn" onclick="startGame()">Start Game</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <div class="lives-gauge" id="livesGauge">❤️❤️❤️ 3/3</div>
+            <div class="score" id="scoreDisplay">Score: 0</div>
+            
+            <div class="scenario-box">
+                <div class="progress" id="progress">Scenario 1 of 7</div>
+                <h2 class="scenario-title" id="scenarioTitle">Loading...</h2>
+                <p class="scenario-text" id="scenarioText">Loading scenario...</p>
+                
+                <div class="choices" id="choices">
+                    <!-- Choices will be populated by JavaScript -->
+                </div>
+                
+                <div class="feedback" id="feedback" style="display: none;">
+                    <!-- Feedback will be shown here -->
+                </div>
+                
+                <button class="btn" id="nextBtn" style="display: none;" onclick="nextScenario()">Next Scenario</button>
+            </div>
+        </div>
+
+        <!-- Reflective Question Screen -->
+        <div id="reflectiveScreen" class="screen">
+            <h2 class="scenario-title">Final Reflection</h2>
+            <p class="scenario-text">Which safe practice would you personally adopt after this lesson to protect your devices?</p>
+            
+            <div class="choices">
+                <button class="choice-btn" onclick="answerReflective('A')">A. Scan all USBs before opening files</button>
+                <button class="choice-btn" onclick="answerReflective('B')">B. Stop downloading cracked software</button>
+                <button class="choice-btn" onclick="answerReflective('C')">C. Use antivirus regularly</button>
+                <button class="choice-btn" onclick="answerReflective('D')">D. All of the above ✅</button>
+            </div>
+            
+            <div class="feedback" id="reflectiveFeedback" style="display: none;">
+                <!-- Reflective feedback will be shown here -->
+            </div>
+            
+            <button class="btn" id="finishBtn" style="display: none;" onclick="showEndScreen()">View Results</button>
+        </div>
+
+        <!-- End Screen -->
+        <div id="endScreen" class="screen">
+            <h2 class="title">Game Complete!</h2>
+            <div class="ranking" id="finalRanking">Cyber Defender</div>
+            <p class="subtitle" id="finalScore">Final Score: 70/70</p>
+            <p class="subtitle" id="rankingDescription">Excellent awareness!</p>
+            
+            <button class="btn" onclick="restartGame()">Play Again</button>
+            <button class="btn btn-secondary" onclick="backToLesson()">Back to Lesson</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="screen">
+            <h2 class="title">Game Over</h2>
+            <p class="subtitle">You ran out of lives! Don't worry, cybersecurity takes practice.</p>
+            <p class="subtitle" id="gameOverScore">Final Score: 0</p>
+            
+            <button class="btn" onclick="restartGame()">Try Again</button>
+            <button class="btn btn-secondary" onclick="backToLesson()">Back to Lesson</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let currentScenario = 0;
+        let lives = 3;
+        let score = 0;
+        let gameStarted = false;
+
+        // Music Control Variables
+        let musicEnabled = true;
+        let musicPlaying = false;
+        const bgMusic = document.getElementById('bgMusic');
+
+        // Game Data
+        const scenarios = [
+            {
+                title: "Scenario 1: Virus / Worm",
+                text: "A friend hands you a USB with a project file, but it also contains unknown .exe files.",
+                choices: [
+                    { text: "A. Plug it in and open files immediately", correct: false },
+                    { text: "B. Scan the USB with antivirus first", correct: true },
+                    { text: "C. Ask your friend about the .exe files", correct: false },
+                    { text: "D. Use it on a different computer first", correct: false }
+                ],
+                malwareType: "Virus",
+                feedback: {
+                    correct: "Excellent! Always scan external storage devices before opening any files.",
+                    incorrect: "This was a Virus! Unknown .exe files on USB drives can infect your entire system."
+                }
+            },
+            {
+                title: "Scenario 2: Trojan Horse",
+                text: "You see a cracked version of Photoshop for free online.",
+                choices: [
+                    { text: "A. Download and install it", correct: false },
+                    { text: "B. Use an official trial version", correct: true },
+                    { text: "C. Ask friends to test it first", correct: false },
+                    { text: "D. Download from multiple sites to compare", correct: false }
+                ],
+                malwareType: "Trojan",
+                feedback: {
+                    correct: "Smart choice! Official trial versions are safe and legal alternatives.",
+                    incorrect: "This was a Trojan Horse! Cracked software often contains hidden malware that steals your data."
+                }
+            },
+            {
+                title: "Scenario 3: Spyware",
+                text: "You log into your email on a public café computer.",
+                choices: [
+                    { text: "A. Log out properly after use", correct: true },
+                    { text: "B. Save your password to the browser for faster login next time", correct: false },
+                    { text: "C. Leave it logged in for convenience", correct: false },
+                    { text: "D. Use auto-login features", correct: false }
+                ],
+                malwareType: "Spyware",
+                feedback: {
+                    correct: "Perfect! Always log out properly on public computers to protect your accounts.",
+                    incorrect: "This could lead to Keylogger/Spyware! Public computers may have software that records your passwords."
+                }
+            },
+            {
+                title: "Scenario 4: Adware / Spyware Combo",
+                text: "You download a 'Free Music Player' app from an unknown website. After installation, pop-ups start appearing.",
+                choices: [
+                    { text: "A. Keep using it, it's free anyway", correct: false },
+                    { text: "B. Uninstall it and use a verified app store alternative", correct: true },
+                    { text: "C. Try to block the pop-ups manually", correct: false },
+                    { text: "D. Download an ad-blocker to fix it", correct: false }
+                ],
+                malwareType: "Adware/Spyware",
+                feedback: {
+                    correct: "Great decision! Always use apps from verified sources like official app stores.",
+                    incorrect: "This was Adware/Spyware! Free apps from unknown sources often contain malicious code."
+                }
+            },
+            {
+                title: "Scenario 5: Ransomware",
+                text: "You download an email attachment claiming to be a class schedule. Suddenly, your files get locked.",
+                choices: [
+                    { text: "A. Pay the ransom to get files back", correct: false },
+                    { text: "B. Don't pay, report it, and restore from backup", correct: true },
+                    { text: "C. Try to decrypt the files yourself", correct: false },
+                    { text: "D. Ignore it and hope it goes away", correct: false }
+                ],
+                malwareType: "Ransomware",
+                feedback: {
+                    correct: "Excellent! Never pay ransoms, and always maintain secure backups of important files.",
+                    incorrect: "This was Ransomware! Paying ransoms encourages more attacks and doesn't guarantee file recovery."
+                }
+            },
+            {
+                title: "Scenario 6: Scareware",
+                text: "A website shows a pop-up: 'Your computer is infected! Click here to clean now.'",
+                choices: [
+                    { text: "A. Click to clean the infection", correct: false },
+                    { text: "B. Close the site and run your own antivirus", correct: true },
+                    { text: "C. Call the phone number provided", correct: false },
+                    { text: "D. Download their recommended cleaner", correct: false }
+                ],
+                malwareType: "Scareware",
+                feedback: {
+                    correct: "Perfect! Always use trusted antivirus software, not random pop-ups or websites.",
+                    incorrect: "This was Scareware! Fake security warnings try to trick you into installing malware."
+                }
+            },
+            {
+                title: "Scenario 7: Botnet",
+                text: "You download a free game. Later, your internet is slow, and unknown programs run in the background.",
+                choices: [
+                    { text: "A. Ignore it, maybe it's nothing", correct: false },
+                    { text: "B. Run a scan and uninstall suspicious apps", correct: true },
+                    { text: "C. Just restart the computer", correct: false },
+                    { text: "D. Upgrade your internet plan", correct: false }
+                ],
+                malwareType: "Botnet",
+                feedback: {
+                    correct: "Smart thinking! Unusual computer behavior should always be investigated immediately.",
+                    incorrect: "Your computer might be part of a Botnet! Infected computers can be controlled remotely for illegal activities."
+                }
+            }
+        ];
+
+        function toggleMusic() {
+            const playButton = document.getElementById('playButton');
+            const playIcon = document.getElementById('playIcon');
+            const musicStatus = document.getElementById('musicStatus');
+            
+            if (!musicPlaying) {
+                // Start music from beginning
+                bgMusic.currentTime = 0;
+                bgMusic.play().then(() => {
+                    musicPlaying = true;
+                    playIcon.textContent = '⏸️';
+                    playButton.classList.add('playing');
+                    musicStatus.textContent = 'Background music playing';
+                }).catch(e => {
+                    console.log('[v0] Music play failed:', e);
+                    musicStatus.textContent = 'Music play failed - try clicking again';
+                });
+            } else {
+                // Pause music
+                bgMusic.pause();
+                musicPlaying = false;
+                playIcon.textContent = '▶️';
+                playButton.classList.remove('playing');
+                musicStatus.textContent = 'Background music paused';
+            }
+        }
+
+        function playMusic() {
+            if (musicEnabled && !musicPlaying) {
+                bgMusic.currentTime = 0; // restart from beginning
+                bgMusic.play().then(() => {
+                    musicPlaying = true;
+                    // Update play button if visible
+                    const playIcon = document.getElementById('playIcon');
+                    const playButton = document.getElementById('playButton');
+                    const musicStatus = document.getElementById('musicStatus');
+                    if (playIcon) {
+                        playIcon.textContent = '⏸️';
+                        playButton.classList.add('playing');
+                        musicStatus.textContent = 'Background music playing';
+                    }
+                }).catch(e => console.log("Music play blocked:", e));
+            }
+        }
+
+        function toggleMute() {
+            const muteBtn = document.getElementById('muteBtn');
+            if (musicEnabled) {
+                bgMusic.muted = true;   // ✅ actually mute
+                muteBtn.textContent = '🔇';
+                musicEnabled = false;
+            } else {
+                bgMusic.muted = false;  // ✅ unmute
+                // make sure it plays if it was paused
+                if (musicPlaying) {
+                    bgMusic.play().catch(e => console.log("Play failed:", e));
+                }
+                muteBtn.textContent = '🔊';
+                musicEnabled = true;
+            }
+        }
+
+        // Initialize game
+        function startGame() {
+            gameStarted = true;
+            currentScenario = 0;
+            lives = 3;
+            score = 0;
+            
+            showScreen('gameScreen');
+            updateUI();
+            loadScenario();
+        }
+
+        function startGameFromLoading() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            
+            bgMusic.volume = 0.3;
+            bgMusic.currentTime = 0;
+            bgMusic.play().then(() => {
+                musicPlaying = true;
+                console.log('[v0] Music started from loading screen at 30% volume');
+            }).catch(e => {
+                console.log('[v0] Music play failed from loading screen:', e);
+            });
+            
+            // Hide loading screen with fade effect
+            loadingScreen.classList.add('hidden');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function updateUI() {
+            const heartsArray = ['💀', '❤️', '❤️❤️', '❤️❤️❤️'];
+            document.getElementById('livesGauge').textContent = `${heartsArray[lives]} ${lives}/3`;
+            document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+        }
+
+        function loadScenario() {
+            if (currentScenario >= scenarios.length) {
+                showScreen('reflectiveScreen');
+                return;
+            }
+
+            const scenario = scenarios[currentScenario];
+            document.getElementById('progress').textContent = `Scenario ${currentScenario + 1} of ${scenarios.length}`;
+            document.getElementById('scenarioTitle').textContent = scenario.title;
+            document.getElementById('scenarioText').textContent = scenario.text;
+            
+            const choicesContainer = document.getElementById('choices');
+            choicesContainer.innerHTML = '';
+            
+            scenario.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = choice.text;
+                button.onclick = () => selectChoice(index);
+                choicesContainer.appendChild(button);
+            });
+
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+
+        function selectChoice(choiceIndex) {
+            const scenario = scenarios[currentScenario];
+            const choice = scenario.choices[choiceIndex];
+            const isCorrect = choice.correct;
+            
+            // Disable all choice buttons
+            document.querySelectorAll('#gameScreen .choice-btn').forEach((btn, index) => {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+                if (index === choiceIndex) {
+                    btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+                if (scenario.choices[index].correct) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            // Update score and lives
+            if (isCorrect) {
+                score += 10;
+            } else {
+                lives--;
+                if (lives <= 0) {
+                    setTimeout(() => showGameOver(), 2000);
+                    return;
+                }
+            }
+
+            updateUI();
+
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = isCorrect ? scenario.feedback.correct : scenario.feedback.incorrect;
+            feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedback.style.display = 'block';
+
+            // Show next button
+            document.getElementById('nextBtn').style.display = 'inline-block';
+        }
+
+        function nextScenario() {
+            currentScenario++;
+            
+            // Reset choice buttons
+            document.querySelectorAll('#gameScreen .choice-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.style.pointerEvents = 'auto';
+                btn.classList.remove('correct', 'incorrect');
+            });
+            
+            loadScenario();
+        }
+
+        function answerReflective(answer) {
+            const isCorrect = answer === 'D';
+            
+            // Disable all choice buttons
+            document.querySelectorAll('#reflectiveScreen .choice-btn').forEach((btn) => {
+                btn.disabled = true;
+                if (btn.textContent.startsWith(answer)) {
+                    btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+                if (btn.textContent.includes('All of the above')) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            // Show feedback
+            const feedback = document.getElementById('reflectiveFeedback');
+            feedback.textContent = isCorrect ? 
+                "Excellent! All of these practices are essential for cybersecurity." : 
+                "Good thinking, but 'All of the above' is the most comprehensive approach to staying safe online.";
+            feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedback.style.display = 'block';
+
+            // Show finish button
+            document.getElementById('finishBtn').style.display = 'inline-block';
+        }
+
+        function showEndScreen() {
+            showScreen('endScreen');
+            
+            let ranking, description, rankingClass;
+            if (score >= 60) {
+                ranking = "Cyber Defender";
+                description = "Excellent awareness!";
+                rankingClass = "defender";
+            } else if (score >= 40) {
+                ranking = "Cautious User";
+                description = "Improve safe habits.";
+                rankingClass = "cautious";
+            } else {
+                ranking = "Malware Magnet";
+                description = "Needs more practice.";
+                rankingClass = "magnet";
+            }
+
+            document.getElementById('finalRanking').textContent = ranking;
+            document.getElementById('finalRanking').className = `ranking ${rankingClass}`;
+            document.getElementById('finalScore').textContent = `Final Score: ${score}/70`;
+            document.getElementById('rankingDescription').textContent = description;
+        }
+
+        function showGameOver() {
+            showScreen('gameOverScreen');
+            document.getElementById('gameOverScore').textContent = `Final Score: ${score}`;
+        }
+
+        function restartGame() {
+            currentScenario = 0;
+            lives = 3;
+            score = 0;
+            
+            if (musicPlaying) {
+                bgMusic.currentTime = 0;
+                bgMusic.volume = 0.3;
+            }
+            
+            showScreen('startScreen');
+        }
+
+        function backToLesson() {
+            alert("This would normally return you to the lesson section of your learning platform.");
+        }
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("[v0] Malware Dodger game loaded successfully");
+            
+            bgMusic.volume = 0.3;
+            
+            // Add audio event listeners for debugging
+            bgMusic.addEventListener('loadstart', () => console.log('[v0] Audio loading started'));
+            bgMusic.addEventListener('canplay', () => console.log('[v0] Audio can play'));
+            bgMusic.addEventListener('error', (e) => console.log('[v0] Audio error:', e));
+            bgMusic.addEventListener('loadeddata', () => console.log('[v0] Audio data loaded'));
+            
+            bgMusic.addEventListener('ended', () => {
+                musicPlaying = false;
+                const playIcon = document.getElementById('playIcon');
+                const playButton = document.getElementById('playButton');
+                const musicStatus = document.getElementById('musicStatus');
+                if (playIcon) {
+                    playIcon.textContent = '▶️';
+                    playButton.classList.remove('playing');
+                    musicStatus.textContent = 'Click to start background music';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
